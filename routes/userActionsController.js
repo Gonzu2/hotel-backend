@@ -2,9 +2,10 @@ const express = require("express");
 const router = express.Router();
 const mongoose = require("mongoose");
 const roomModel = require("../models/Room");
+const dotenv = require("dotenv").config()
 
 mongoose
-  .connect("mongodb+srv://Gonzu:123dzese123@cluster0.ofwk9mi.mongodb.net/hotel")
+  .connect(process.env.MONGODB)
   .catch((err) => console.log(err));
 
 mongoose.connection.on("connected", () => {
