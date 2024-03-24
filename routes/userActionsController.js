@@ -2,11 +2,9 @@ const express = require("express");
 const router = express.Router();
 const mongoose = require("mongoose");
 const roomModel = require("../models/Room");
-const dotenv = require("dotenv").config()
+const dotenv = require("dotenv").config();
 
-mongoose
-  .connect(process.env.MONGODB)
-  .catch((err) => console.log(err));
+mongoose.connect(process.env.MONGODB).catch((err) => console.log(err));
 
 mongoose.connection.on("connected", () => {
   console.log("Connected to MongoDB");
@@ -55,13 +53,40 @@ router.get(
     const requestedCheckinDate = new Date(req.params.checkinDate);
     const requestedCheckoutDate = new Date(req.params.checkoutDate);
 
-    function isValidDateFormat(dateString) {
-      return !isNaN(Date.parse(dateString));
+    // Convert parsed dates to UTC
+    const checkinUTC = new Date(
+      Date.UTC(
+        requestedCheckinDate.getFullYear(),
+        requestedCheckinDate.getMonth(),
+        requestedCheckinDate.getDate(),
+        requestedCheckinDate.getHours(),
+        requestedCheckinDate.getMinutes(),
+        requestedCheckinDate.getSeconds()
+      )
+    );
+
+    const checkoutUTC = new Date(
+      Date.UTC(
+        requestedCheckoutDate.getFullYear(),
+        requestedCheckoutDate.getMonth(),
+        requestedCheckoutDate.getDate(),
+        requestedCheckoutDate.getHours(),
+        requestedCheckoutDate.getMinutes(),
+        requestedCheckoutDate.getSeconds()
+      )
+    );
+
+    console.log(checkinUTC + " " + checkoutUTC);
+
+    // Function to check if a date is valid
+    function isValidDate(date) {
+      return !isNaN(date.getTime()); // Check if the date is a valid date object
     }
 
-    if (!!isValidDateFormat(checkinDate) || !isValidDateFormat(checkoutDate)) {
-      return res.status(404).json({
-        message: "Bad checkin/checkout date format or date not provided",
+    // Check if both check-in and check-out dates are valid
+    if (!isValidDate(checkinUTC) || !isValidDate(checkoutUTC)) {
+      return res.status(400).json({
+        message: "Invalid check-in or check-out date",
       });
     }
 
@@ -86,13 +111,12 @@ router.get(
         });
 
         if (isAvailable) {
-          availableRooms.push({
-            id: room.id,
-            number: room.number,
-            availability: true,
-          });
+          availableRooms.push(room);
         }
       });
+
+      console.log(availableRooms);
+
       return res.status(200).json({
         availableRooms: availableRooms.sort((a, b) => a.number - b.number),
       });
